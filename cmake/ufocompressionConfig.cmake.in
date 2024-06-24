@@ -1,0 +1,6 @@
+@PACKAGE_INIT@
+
+include("${CMAKE_CURRENT_LIST_DIR}/ufocompressionTargets.cmake")
+check_required_components("ufocompression")
+
+target_link_libraries(UFO::Compression INTERFACE UFO::Utility lz4 lzf zlib libzstd_static)
