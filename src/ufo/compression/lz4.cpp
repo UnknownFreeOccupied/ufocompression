@@ -48,22 +48,20 @@
 
 namespace ufo
 {
-Compressor<CompressionAlgorithm::LZ4>::size_type
-Compressor<CompressionAlgorithm::LZ4>::maxSizeImpl() const
+CompressorLZ4::size_type CompressorLZ4::maxSizeImpl() const
 {
 	return static_cast<size_type>(LZ4_MAX_INPUT_SIZE);
 }
 
-Compressor<CompressionAlgorithm::LZ4>::size_type Compressor<
-    CompressionAlgorithm::LZ4>::compressBoundImpl(size_type uncompressed_size) const
+CompressorLZ4::size_type CompressorLZ4::compressBoundImpl(
+    size_type uncompressed_size) const
 {
 	return static_cast<size_type>(LZ4_compressBound(LZ4_MAX_INPUT_SIZE));
 }
 
-Compressor<CompressionAlgorithm::LZ4>::size_type
-Compressor<CompressionAlgorithm::LZ4>::compressImpl(std::byte const* src, std::byte* dst,
-                                                    size_type src_size,
-                                                    size_type dst_cap) const
+CompressorLZ4::size_type CompressorLZ4::compress(std::byte const* src, std::byte* dst,
+                                                 size_type src_size,
+                                                 size_type dst_cap) const
 {
 	return static_cast<size_type>(
 	    0 < compression_level
@@ -75,10 +73,9 @@ Compressor<CompressionAlgorithm::LZ4>::compressImpl(std::byte const* src, std::b
 	                            static_cast<int>(dst_cap), acceleration));
 }
 
-Compressor<CompressionAlgorithm::LZ4>::size_type
-Compressor<CompressionAlgorithm::LZ4>::decompressImpl(std::byte const* src,
-                                                      std::byte* dst, size_type src_size,
-                                                      size_type dst_cap) const
+CompressorLZ4::size_type CompressorLZ4::decompress(std::byte const* src, std::byte* dst,
+                                                   size_type src_size,
+                                                   size_type dst_cap) const
 {
 	return static_cast<std::size_t>(LZ4_decompress_safe(
 	    reinterpret_cast<char const*>(src), reinterpret_cast<char*>(dst),

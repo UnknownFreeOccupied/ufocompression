@@ -49,31 +49,28 @@ extern "C" {
 
 namespace ufo
 {
-Compressor<CompressionAlgorithm::LZF>::size_type
-Compressor<CompressionAlgorithm::LZF>::maxSizeImpl() const
+CompressorLZF::size_type CompressorLZF::maxSizeImpl() const
 {
 	return std::numeric_limits<unsigned int>::max();
 }
 
-Compressor<CompressionAlgorithm::LZF>::size_type Compressor<
-    CompressionAlgorithm::LZF>::compressBoundImpl(size_type uncompressed_size) const
+CompressorLZF::size_type CompressorLZF::compressBoundImpl(
+    size_type uncompressed_size) const
 {
 	return static_cast<size_type>(std::ceil(1.04 * static_cast<double>(uncompressed_size)));
 }
 
-Compressor<CompressionAlgorithm::LZF>::size_type
-Compressor<CompressionAlgorithm::LZF>::compressImpl(std::byte const* src, std::byte* dst,
-                                                    size_type src_size,
-                                                    size_type dst_cap) const
+CompressorLZF::size_type CompressorLZF::compress(std::byte const* src, std::byte* dst,
+                                                 size_type src_size,
+                                                 size_type dst_cap) const
 {
 	return lzf_compress(src, static_cast<unsigned int>(src_size), dst,
 	                    static_cast<unsigned int>(dst_cap));
 }
 
-Compressor<CompressionAlgorithm::LZF>::size_type
-Compressor<CompressionAlgorithm::LZF>::decompressImpl(std::byte const* src,
-                                                      std::byte* dst, size_type src_size,
-                                                      size_type dst_cap) const
+CompressorLZF::size_type CompressorLZF::decompress(std::byte const* src, std::byte* dst,
+                                                   size_type src_size,
+                                                   size_type dst_cap) const
 {
 	return lzf_decompress(src, static_cast<unsigned int>(src_size), dst,
 	                      static_cast<unsigned int>(dst_cap));

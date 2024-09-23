@@ -17,7 +17,7 @@ TEST_CASE("LZ4 Compression")
 	    .next(ufo::CompressorZLIB())
 	    .next(ufo::CompressorLZF());
 
-	for (ufo::CompressorBase* it = &compressor; it; it = &it->next()) {
+	for (ufo::Compressor* it = &compressor; it; it = &it->next()) {
 		std::cout << ufo::enumToString(it->type()) << std::endl;
 	}
 

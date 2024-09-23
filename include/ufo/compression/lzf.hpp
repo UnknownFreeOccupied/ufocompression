@@ -53,34 +53,36 @@
 
 namespace ufo
 {
-template <>
-struct Compressor<CompressionAlgorithm::LZF> : public CompressorBase {
-	Compressor() noexcept         = default;
-	Compressor(Compressor const&) = default;
-	Compressor(Compressor&&)      = default;
+struct CompressorLZF : public Compressor {
+	CompressorLZF() noexcept            = default;
+	CompressorLZF(CompressorLZF const&) = default;
+	CompressorLZF(CompressorLZF&&)      = default;
 
-	~Compressor() override = default;
+	~CompressorLZF() override = default;
 
-	Compressor& operator=(Compressor const&) = default;
-	Compressor& operator=(Compressor&&)      = default;
+	CompressorLZF& operator=(CompressorLZF const&) = default;
+	CompressorLZF& operator=(CompressorLZF&&)      = default;
 
 	[[nodiscard]] CompressionAlgorithm type() const noexcept override
 	{
 		return CompressionAlgorithm::LZF;
 	}
 
+	using Compressor::compress;
+	using Compressor::decompress;
+
  protected:
 	[[nodiscard]] size_type maxSizeImpl() const override;
 
 	[[nodiscard]] size_type compressBoundImpl(size_type uncompressed_size) const override;
 
-	size_type compressImpl(std::byte const* src, std::byte* dst, size_type src_size,
-	                       size_type dst_cap) const override;
+	size_type compress(std::byte const* src, std::byte* dst, size_type src_size,
+	                   size_type dst_cap) const override;
 
-	size_type decompressImpl(std::byte const* src, std::byte* dst, size_type src_size,
-	                         size_type dst_cap) const override;
+	size_type decompress(std::byte const* src, std::byte* dst, size_type src_size,
+	                     size_type dst_cap) const override;
 
-	Compressor* clone() const override { return new Compressor(*this); }
+	[[nodiscard]] CompressorLZF* clone() const override { return new CompressorLZF(*this); }
 };
 
 }  // namespace ufo

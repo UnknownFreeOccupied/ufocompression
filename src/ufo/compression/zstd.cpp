@@ -47,28 +47,23 @@
 
 namespace ufo
 {
-Compressor<CompressionAlgorithm::ZSTD>::Compressor() noexcept
-    : compression_level(ZSTD_defaultCLevel())
-{
-}
+CompressorZSTD::CompressorZSTD() noexcept : compression_level(ZSTD_defaultCLevel()) {}
 
-Compressor<CompressionAlgorithm::ZSTD>::size_type
-Compressor<CompressionAlgorithm::ZSTD>::maxSizeImpl() const
+CompressorZSTD::size_type CompressorZSTD::maxSizeImpl() const
 {
 	// FIXME: What is the maximum size?
 	return std::numeric_limits<size_type>::max();
 }
 
-Compressor<CompressionAlgorithm::ZSTD>::size_type Compressor<
-    CompressionAlgorithm::ZSTD>::compressBoundImpl(size_type uncompressed_size) const
+CompressorZSTD::size_type CompressorZSTD::compressBoundImpl(
+    size_type uncompressed_size) const
 {
 	return ZSTD_compressBound(uncompressed_size);
 }
 
-Compressor<CompressionAlgorithm::ZSTD>::size_type
-Compressor<CompressionAlgorithm::ZSTD>::compressImpl(std::byte const* src, std::byte* dst,
-                                                     size_type src_size,
-                                                     size_type dst_cap) const
+CompressorZSTD::size_type CompressorZSTD::compress(std::byte const* src, std::byte* dst,
+                                                   size_type src_size,
+                                                   size_type dst_cap) const
 {
 	assert(ZSTD_minCLevel() <= compression_level);
 	assert(ZSTD_maxCLevel() >= compression_level);
@@ -76,10 +71,9 @@ Compressor<CompressionAlgorithm::ZSTD>::compressImpl(std::byte const* src, std::
 	    ZSTD_compress(dst, dst_cap, src, src_size, compression_level));
 }
 
-Compressor<CompressionAlgorithm::ZSTD>::size_type
-Compressor<CompressionAlgorithm::ZSTD>::decompressImpl(std::byte const* src,
-                                                       std::byte* dst, size_type src_size,
-                                                       size_type dst_cap) const
+CompressorZSTD::size_type CompressorZSTD::decompress(std::byte const* src, std::byte* dst,
+                                                     size_type src_size,
+                                                     size_type dst_cap) const
 {
 	return static_cast<size_type>(ZSTD_decompress(dst, dst_cap, src, src_size));
 }

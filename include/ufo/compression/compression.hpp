@@ -53,11 +53,11 @@
 
 namespace ufo
 {
-using CompressorNone = Compressor<CompressionAlgorithm::NONE>;
-using CompressorLZ4  = Compressor<CompressionAlgorithm::LZ4>;
-using CompressorZSTD = Compressor<CompressionAlgorithm::ZSTD>;
-using CompressorLZF  = Compressor<CompressionAlgorithm::LZF>;
-using CompressorZLIB = Compressor<CompressionAlgorithm::ZLIB>;
+using CompressorNone = CompressorNONE;
+using CompressorLZ4  = CompressorLZ4;
+using CompressorZSTD = CompressorZSTD;
+using CompressorLZF  = CompressorLZF;
+using CompressorZLIB = CompressorZLIB;
 
 // TODO: Add decompress
 }  // namespace ufo

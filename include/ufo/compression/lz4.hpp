@@ -51,24 +51,23 @@
 
 namespace ufo
 {
-template <>
-struct Compressor<CompressionAlgorithm::LZ4> : public CompressorBase {
+struct CompressorLZ4 : public Compressor {
 	int acceleration      = 1;
 	int compression_level = 0;
 
-	Compressor() noexcept         = default;
-	Compressor(Compressor const&) = default;
-	Compressor(Compressor&&)      = default;
+	CompressorLZ4() noexcept            = default;
+	CompressorLZ4(CompressorLZ4 const&) = default;
+	CompressorLZ4(CompressorLZ4&&)      = default;
 
-	Compressor(int acceleration, int compression_level = 0)
+	CompressorLZ4(int acceleration, int compression_level = 0)
 	    : acceleration(acceleration), compression_level(compression_level)
 	{
 	}
 
-	~Compressor() override = default;
+	~CompressorLZ4() override = default;
 
-	Compressor& operator=(Compressor const&) = default;
-	Compressor& operator=(Compressor&&)      = default;
+	CompressorLZ4& operator=(CompressorLZ4 const&) = default;
+	CompressorLZ4& operator=(CompressorLZ4&&)      = default;
 
 	[[nodiscard]] CompressionAlgorithm type() const noexcept override
 	{
@@ -77,19 +76,22 @@ struct Compressor<CompressionAlgorithm::LZ4> : public CompressorBase {
 
 	// TODO: Maybe add "raw" methods that can be used to read for example PCL point clouds
 
+	using Compressor::compress;
+	using Compressor::decompress;
+
  protected:
 	[[nodiscard]] size_type maxSizeImpl() const override;
 
 	[[nodiscard]] size_type compressBoundImpl(size_type uncompressed_size) const override;
 
-	size_type compressImpl(std::byte const* src, std::byte* dst, size_type src_size,
-	                       size_type dst_cap) const override;
+	size_type compress(std::byte const* src, std::byte* dst, size_type src_size,
+	                   size_type dst_cap) const override;
 
-	[[nodiscard]] size_type decompressImpl(std::byte const* src, std::byte* dst,
-	                                       size_type src_size,
-	                                       size_type dst_cap) const override;
+	[[nodiscard]] size_type decompress(std::byte const* src, std::byte* dst,
+	                                   size_type src_size,
+	                                   size_type dst_cap) const override;
 
-	[[nodiscard]] Compressor* clone() const override { return new Compressor(*this); }
+	[[nodiscard]] CompressorLZ4* clone() const override { return new CompressorLZ4(*this); }
 };
 }  // namespace ufo
 

@@ -47,28 +47,23 @@
 
 namespace ufo
 {
-Compressor<CompressionAlgorithm::ZLIB>::Compressor() noexcept
-    : compression_level(Z_DEFAULT_COMPRESSION)
-{
-}
+CompressorZLIB::CompressorZLIB() noexcept : compression_level(Z_DEFAULT_COMPRESSION) {}
 
-Compressor<CompressionAlgorithm::ZLIB>::size_type
-Compressor<CompressionAlgorithm::ZLIB>::maxSizeImpl() const
+CompressorZLIB::size_type CompressorZLIB::maxSizeImpl() const
 {
 	// FIXME: What is the maximum size?
 	return std::numeric_limits<size_type>::max();
 }
 
-Compressor<CompressionAlgorithm::ZLIB>::size_type Compressor<
-    CompressionAlgorithm::ZLIB>::compressBoundImpl(size_type uncompressed_size) const
+CompressorZLIB::size_type CompressorZLIB::compressBoundImpl(
+    size_type uncompressed_size) const
 {
 	return zng_compressBound(uncompressed_size);
 }
 
-Compressor<CompressionAlgorithm::ZLIB>::size_type
-Compressor<CompressionAlgorithm::ZLIB>::compressImpl(std::byte const* src, std::byte* dst,
-                                                     size_type src_size,
-                                                     size_type dst_cap) const
+CompressorZLIB::size_type CompressorZLIB::compress(std::byte const* src, std::byte* dst,
+                                                   size_type src_size,
+                                                   size_type dst_cap) const
 {
 	std::size_t dst_length = dst_cap;
 	auto        code = zng_compress2(reinterpret_cast<std::uint8_t*>(dst), &dst_length,
@@ -82,10 +77,9 @@ Compressor<CompressionAlgorithm::ZLIB>::compressImpl(std::byte const* src, std::
 	return 0;
 }
 
-Compressor<CompressionAlgorithm::ZLIB>::size_type
-Compressor<CompressionAlgorithm::ZLIB>::decompressImpl(std::byte const* src,
-                                                       std::byte* dst, size_type src_size,
-                                                       size_type dst_cap) const
+CompressorZLIB::size_type CompressorZLIB::decompress(std::byte const* src, std::byte* dst,
+                                                     size_type src_size,
+                                                     size_type dst_cap) const
 {
 	std::size_t dst_length = dst_cap;
 	std::size_t src_length = src_size;

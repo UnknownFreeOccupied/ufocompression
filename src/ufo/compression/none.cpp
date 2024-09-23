@@ -44,32 +44,29 @@
 
 namespace ufo
 {
-Compressor<CompressionAlgorithm::NONE>::size_type
-Compressor<CompressionAlgorithm::NONE>::maxSizeImpl() const
+CompressorNONE::size_type CompressorNONE::maxSizeImpl() const
 {
 	return std::numeric_limits<size_type>::max();
 }
 
-Compressor<CompressionAlgorithm::NONE>::size_type Compressor<
-    CompressionAlgorithm::NONE>::compressBoundImpl(size_type uncompressed_size) const
+CompressorNONE::size_type CompressorNONE::compressBoundImpl(
+    size_type uncompressed_size) const
 {
 	return uncompressed_size;
 }
 
-Compressor<CompressionAlgorithm::NONE>::size_type
-Compressor<CompressionAlgorithm::NONE>::compressImpl(std::byte const* src, std::byte* dst,
-                                                     size_type src_size,
-                                                     size_type dst_cap) const
+CompressorNONE::size_type CompressorNONE::compress(std::byte const* src, std::byte* dst,
+                                                   size_type src_size,
+                                                   size_type dst_cap) const
 {
 	assert(src_size <= dst_cap);
 	std::memcpy(dst, src, src_size);
 	return src_size;
 }
 
-Compressor<CompressionAlgorithm::NONE>::size_type
-Compressor<CompressionAlgorithm::NONE>::decompressImpl(std::byte const* src,
-                                                       std::byte* dst, size_type src_size,
-                                                       size_type dst_cap) const
+CompressorNONE::size_type CompressorNONE::decompress(std::byte const* src, std::byte* dst,
+                                                     size_type src_size,
+                                                     size_type dst_cap) const
 {
 	assert(src_size <= dst_cap);
 	std::memcpy(dst, src, src_size);

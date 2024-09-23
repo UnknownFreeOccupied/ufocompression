@@ -53,30 +53,28 @@
 #include <iostream>
 #include <limits>
 #include <memory>
+#include <type_traits>
 #include <vector>
 
 namespace ufo
 {
-template <CompressionAlgorithm Algorithm>
-struct Compressor;
-
-struct CompressorBase {
+struct Compressor {
 	using size_type = std::size_t;
 
-	CompressorBase() noexcept = default;
+	Compressor() noexcept = default;
 
-	CompressorBase(CompressorBase const& other)
+	Compressor(Compressor const& other)
 	{
 		if (other.next_) {
 			next_.reset(other.next_->clone());
 		}
 	}
 
-	CompressorBase(CompressorBase&&) = default;
+	Compressor(Compressor&&) = default;
 
-	virtual ~CompressorBase() = default;
+	virtual ~Compressor() = default;
 
-	CompressorBase& operator=(CompressorBase const& rhs)
+	Compressor& operator=(Compressor const& rhs)
 	{
 		if (rhs.next_) {
 			next_.reset(rhs.clone());
@@ -84,7 +82,7 @@ struct CompressorBase {
 		return *this;
 	}
 
-	CompressorBase& operator=(CompressorBase&&) = default;
+	Compressor& operator=(Compressor&&) = default;
 
 	[[nodiscard]] size_type size() const
 	{
@@ -95,21 +93,23 @@ struct CompressorBase {
 		return ret;
 	}
 
-	[[nodiscard]] CompressorBase& next() { return *next_; }
+	[[nodiscard]] Compressor& next() { return *next_; }
 
-	[[nodiscard]] CompressorBase const& next() const { return *next_; }
+	[[nodiscard]] Compressor const& next() const { return *next_; }
 
-	template <CompressionAlgorithm Algorithm>
-	CompressorBase& next(Compressor<Algorithm> const& next)
+	template <class Comp,
+	          std::enable_if_t<std::is_base_of_v<Compressor, Comp>, bool> = true>
+	Compressor& next(Comp const& next)
 	{
-		next_ = std::make_unique<Compressor<Algorithm>>(next);
+		next_ = std::make_unique<Comp>(next);
 		return *next_;
 	}
 
-	template <CompressionAlgorithm Algorithm>
-	CompressorBase& next(Compressor<Algorithm>&& next)
+	template <class Comp,
+	          std::enable_if_t<std::is_base_of_v<Compressor, Comp>, bool> = true>
+	Compressor& next(Comp&& next)
 	{
-		next_ = std::make_unique<Compressor<Algorithm>>(std::move(next));
+		next_ = std::make_unique<Comp>(std::forward<Comp>(next));
 		return *next_;
 	}
 
@@ -126,13 +126,12 @@ struct CompressorBase {
 		return chain;
 	}
 
-	[[nodiscard]] size_type maxSize() const
+	[[nodiscard]] size_type maxSize(bool native = false) const
 	{
-		return std::numeric_limits<size_type>::max();
-	}
+		if (!native) {
+			return std::numeric_limits<size_type>::max();
+		}
 
-	[[nodiscard]] size_type maxSizeNative() const
-	{
 		// FIXME: Can be incorrect since compressed can be larger than uncompressed
 
 		auto ms = maxSizeImpl();
@@ -142,33 +141,33 @@ struct CompressorBase {
 		return ms;
 	}
 
-	[[nodiscard]] size_type compressBound(size_type uncompressed_size) const
+	[[nodiscard]] size_type compressBound(size_type uncompressed_size,
+	                                      bool      native = false) const
 	{
-		size_type bound = uncompressed_size;
-		for (auto it = this; it; it = &it->next()) {
-			auto ms = it->maxSizeImpl();
-			auto a  = bound / ms;
-			auto b  = bound % ms;
+		if (native) {
+			auto bound = compressBoundImpl(uncompressed_size);
+			for (auto it = &next(); it; it = &it->next()) {
+				bound = it->compressBoundImpl(bound);
+			}
+			return bound;
+		} else {
+			size_type bound = uncompressed_size;
+			for (auto it = this; it; it = &it->next()) {
+				auto ms = it->maxSizeImpl();
+				auto a  = bound / ms;
+				auto b  = bound % ms;
 
-			bound = a * it->compressBoundImpl(ms) + it->compressBoundImpl(b) +
-			        (a + 2) * sizeof(std::uint64_t);
+				bound = a * it->compressBoundImpl(ms) + it->compressBoundImpl(b) +
+				        (a + 2) * sizeof(std::uint64_t);
+			}
+
+			// Add cost of chain
+			return (size() + 1) * sizeof(CompressionAlgorithm) + bound;
 		}
-
-		// Add cost of chain
-		return (size() + 1) * sizeof(CompressionAlgorithm) + bound;
 	}
 
-	[[nodiscard]] size_type compressBoundNative(size_type uncompressed_size) const
-	{
-		auto bound = compressBoundImpl(uncompressed_size);
-		for (auto it = &next(); it; it = &it->next()) {
-			bound = it->compressBoundImpl(bound);
-		}
-		return bound;
-	}
-
-	size_type compress(std::istream& in, std::ostream& out,
-	                   size_type uncompressed_size) const
+	size_type compress(std::istream& in, std::ostream& out, size_type uncompressed_size,
+	                   bool native = false) const
 	{
 		std::uint64_t size = static_cast<std::uint64_t>(uncompressed_size);
 
@@ -199,44 +198,19 @@ struct CompressorBase {
 		return compressed_size;
 	}
 
-	size_type compress(ReadBuffer& in, WriteBuffer& out) const
+	size_type compress(ReadBuffer& in, WriteBuffer& out, bool native = false) const
 	{
 		// TODO: Implement
 		return 0;
 	}
 
-	size_type compressNative(std::istream& in, std::ostream& out,
-	                         size_type uncompressed_size) const
+	size_type decompress(std::istream& in, std::ostream& out, bool native = false) const
 	{
 		// TODO: Implement
 		return 0;
 	}
 
-	size_type compressNative(ReadBuffer& in, WriteBuffer& out) const
-	{
-		// TODO: Implement
-		return 0;
-	}
-
-	size_type decompress(std::istream& in, std::ostream& out) const
-	{
-		// TODO: Implement
-		return 0;
-	}
-
-	size_type decompress(ReadBuffer& in, WriteBuffer& out) const
-	{
-		// TODO: Implement
-		return 0;
-	}
-
-	size_type decompressNative(std::istream& in, std::ostream& out) const
-	{
-		// TODO: Implement
-		return 0;
-	}
-
-	size_type decompressNative(ReadBuffer& in, WriteBuffer& out) const
+	size_type decompress(ReadBuffer& in, WriteBuffer& out, bool native = false) const
 	{
 		// TODO: Implement
 		return 0;
@@ -248,16 +222,16 @@ struct CompressorBase {
 	[[nodiscard]] virtual size_type compressBoundImpl(
 	    size_type uncompressed_size) const = 0;
 
-	virtual size_type compressImpl(std::byte const* src, std::byte* dst, size_type src_size,
-	                               size_type dst_cap) const = 0;
+	virtual size_type compress(std::byte const* src, std::byte* dst, size_type src_size,
+	                           size_type dst_cap) const = 0;
 
-	virtual size_type decompressImpl(std::byte const* src, std::byte* dst,
-	                                 size_type src_size, size_type dst_cap) const = 0;
+	virtual size_type decompress(std::byte const* src, std::byte* dst, size_type src_size,
+	                             size_type dst_cap) const = 0;
 
-	[[nodiscard]] virtual CompressorBase* clone() const = 0;
+	[[nodiscard]] virtual Compressor* clone() const = 0;
 
  private:
-	std::unique_ptr<CompressorBase> next_;
+	std::unique_ptr<Compressor> next_;
 };
 }  // namespace ufo
 
