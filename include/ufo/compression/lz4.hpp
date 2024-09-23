@@ -49,10 +49,6 @@
 // STL
 #include <cstddef>
 
-// LZ4 compression
-#include <lz4.h>
-#include <lz4hc.h>
-
 namespace ufo
 {
 template <>
