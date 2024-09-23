@@ -14,7 +14,13 @@ endif()
 add_subdirectory(1stparty)
 add_subdirectory(3rdparty)
 
-add_library(ufocompression INTERFACE)
+add_library(ufocompression SHARED
+	src/ufo/compression/lz4.cpp
+	src/ufo/compression/lzf.cpp
+	src/ufo/compression/none.cpp
+	src/ufo/compression/zlib.cpp
+	src/ufo/compression/zstd.cpp
+)
 add_library(UFO::Compression ALIAS ufocompression)
 
 set_target_properties(ufocompression PROPERTIES
@@ -24,15 +30,15 @@ set_target_properties(ufocompression PROPERTIES
 	CXX_EXTENSIONS OFF
 )
 
-target_link_libraries(ufocompression INTERFACE UFO::Utility lz4 lzf zlib libzstd_static)
+target_link_libraries(ufocompression PUBLIC UFO::Utility PRIVATE lz4 lzf zlib libzstd_static)
 
-target_include_directories(ufocompression INTERFACE
+target_include_directories(ufocompression PUBLIC
 	$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
 	$<INSTALL_INTERFACE:include>
 	# ${zstd_SOURCE_DIR}/lib
 )
 
-target_compile_features(ufocompression INTERFACE cxx_std_17)
+target_compile_features(ufocompression PUBLIC cxx_std_17)
 
 include(GNUInstallDirs)
 install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/

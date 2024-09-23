@@ -51,16 +51,13 @@
 #include <cassert>
 #include <cstddef>
 
-// ZSTD
-#include <zstd.h>
-
 namespace ufo
 {
 template <>
 struct Compressor<CompressionAlgorithm::ZSTD> : public CompressorBase {
-	int compression_level = ZSTD_defaultCLevel();
+	int compression_level;
 
-	Compressor() noexcept         = default;
+	Compressor() noexcept;
 	Compressor(Compressor const&) = default;
 	Compressor(Compressor&&)      = default;
 
@@ -77,31 +74,15 @@ struct Compressor<CompressionAlgorithm::ZSTD> : public CompressorBase {
 	}
 
  protected:
-	[[nodiscard]] size_type maxSizeImpl() const override
-	{
-		// FIXME: What is the maximum size?
-		return std::numeric_limits<size_type>::max();
-	}
+	[[nodiscard]] size_type maxSizeImpl() const override;
 
-	[[nodiscard]] size_type compressBoundImpl(size_type uncompressed_size) const override
-	{
-		return ZSTD_compressBound(uncompressed_size);
-	}
+	[[nodiscard]] size_type compressBoundImpl(size_type uncompressed_size) const override;
 
 	size_type compressImpl(std::byte const* src, std::byte* dst, size_type src_size,
-	                       size_type dst_cap) const override
-	{
-		assert(ZSTD_minCLevel() <= compression_level);
-		assert(ZSTD_maxCLevel() >= compression_level);
-		return static_cast<size_type>(
-		    ZSTD_compress(dst, dst_cap, src, src_size, compression_level));
-	}
+	                       size_type dst_cap) const override;
 
 	size_type decompressImpl(std::byte const* src, std::byte* dst, size_type src_size,
-	                         size_type dst_cap) const override
-	{
-		return static_cast<size_type>(ZSTD_decompress(dst, dst_cap, src, src_size));
-	}
+	                         size_type dst_cap) const override;
 
 	Compressor* clone() const override { return new Compressor(*this); }
 };

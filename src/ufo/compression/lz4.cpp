@@ -39,50 +39,49 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef UFO_COMPRESSION_LZF_HPP
-#define UFO_COMPRESSION_LZF_HPP
+//  UFO
+#include <ufo/compression/lz4.hpp>
 
-// UFO
-#include <ufo/compression/algorithm.hpp>
-#include <ufo/compression/compressor.hpp>
-#include <ufo/utility/io/buffer.hpp>
-
-// STL
-#include <cmath>
-#include <cstddef>
+// LZ4
+#include <lz4.h>
+#include <lz4hc.h>
 
 namespace ufo
 {
-template <>
-struct Compressor<CompressionAlgorithm::LZF> : public CompressorBase {
-	Compressor() noexcept         = default;
-	Compressor(Compressor const&) = default;
-	Compressor(Compressor&&)      = default;
+Compressor<CompressionAlgorithm::LZ4>::size_type
+Compressor<CompressionAlgorithm::LZ4>::maxSizeImpl() const
+{
+	return static_cast<size_type>(LZ4_MAX_INPUT_SIZE);
+}
 
-	~Compressor() override = default;
+Compressor<CompressionAlgorithm::LZ4>::size_type Compressor<
+    CompressionAlgorithm::LZ4>::compressBoundImpl(size_type uncompressed_size) const
+{
+	return static_cast<size_type>(LZ4_compressBound(LZ4_MAX_INPUT_SIZE));
+}
 
-	Compressor& operator=(Compressor const&) = default;
-	Compressor& operator=(Compressor&&)      = default;
+Compressor<CompressionAlgorithm::LZ4>::size_type
+Compressor<CompressionAlgorithm::LZ4>::compressImpl(std::byte const* src, std::byte* dst,
+                                                    size_type src_size,
+                                                    size_type dst_cap) const
+{
+	return static_cast<size_type>(
+	    0 < compression_level
+	        ? LZ4_compress_HC(reinterpret_cast<char const*>(src),
+	                          reinterpret_cast<char*>(dst), static_cast<int>(src_size),
+	                          static_cast<int>(dst_cap), compression_level)
+	        : LZ4_compress_fast(reinterpret_cast<char const*>(src),
+	                            reinterpret_cast<char*>(dst), static_cast<int>(src_size),
+	                            static_cast<int>(dst_cap), acceleration));
+}
 
-	[[nodiscard]] CompressionAlgorithm type() const noexcept override
-	{
-		return CompressionAlgorithm::LZF;
-	}
-
- protected:
-	[[nodiscard]] size_type maxSizeImpl() const override;
-
-	[[nodiscard]] size_type compressBoundImpl(size_type uncompressed_size) const override;
-
-	size_type compressImpl(std::byte const* src, std::byte* dst, size_type src_size,
-	                       size_type dst_cap) const override;
-
-	size_type decompressImpl(std::byte const* src, std::byte* dst, size_type src_size,
-	                         size_type dst_cap) const override;
-
-	Compressor* clone() const override { return new Compressor(*this); }
-};
-
+Compressor<CompressionAlgorithm::LZ4>::size_type
+Compressor<CompressionAlgorithm::LZ4>::decompressImpl(std::byte const* src,
+                                                      std::byte* dst, size_type src_size,
+                                                      size_type dst_cap) const
+{
+	return static_cast<std::size_t>(LZ4_decompress_safe(
+	    reinterpret_cast<char const*>(src), reinterpret_cast<char*>(dst),
+	    static_cast<int>(src_size), static_cast<int>(dst_cap)));
+}
 }  // namespace ufo
-
-#endif  // UFO_COMPRESSION_LZF_HPP

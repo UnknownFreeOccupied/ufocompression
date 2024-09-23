@@ -50,16 +50,13 @@
 // STL
 #include <cstddef>
 
-// ZLIB
-#include <zlib-ng.h>
-
 namespace ufo
 {
 template <>
 struct Compressor<CompressionAlgorithm::ZLIB> : public CompressorBase {
-	int compression_level = Z_DEFAULT_COMPRESSION;
+	int compression_level;
 
-	Compressor() noexcept         = default;
+	Compressor() noexcept;
 	Compressor(Compressor const&) = default;
 	Compressor(Compressor&&)      = default;
 
@@ -76,46 +73,15 @@ struct Compressor<CompressionAlgorithm::ZLIB> : public CompressorBase {
 	}
 
  protected:
-	[[nodiscard]] size_type maxSizeImpl() const override
-	{
-		// FIXME: What is the maximum size?
-		return std::numeric_limits<size_type>::max();
-	}
+	[[nodiscard]] size_type maxSizeImpl() const override;
 
-	[[nodiscard]] size_type compressBoundImpl(size_type uncompressed_size) const override
-	{
-		return zng_compressBound(uncompressed_size);
-	}
+	[[nodiscard]] size_type compressBoundImpl(size_type uncompressed_size) const override;
 
 	size_type compressImpl(std::byte const* src, std::byte* dst, size_type src_size,
-	                       size_type dst_cap) const override
-	{
-		std::size_t dst_length = dst_cap;
-		auto        code = zng_compress2(reinterpret_cast<std::uint8_t*>(dst), &dst_length,
-		                                 reinterpret_cast<std::uint8_t const*>(src), src_size,
-		                                 compression_level);
-		if (Z_OK == code) {
-			return dst_length;
-		}
-
-		// TODO: Handle errors
-		return 0;
-	}
+	                       size_type dst_cap) const override;
 
 	size_type decompressImpl(std::byte const* src, std::byte* dst, size_type src_size,
-	                         size_type dst_cap) const override
-	{
-		std::size_t dst_length = dst_cap;
-		std::size_t src_length = src_size;
-		auto        code = zng_uncompress2(reinterpret_cast<std::uint8_t*>(dst), &dst_length,
-		                                   reinterpret_cast<std::uint8_t const*>(src), &src_length);
-		if (Z_OK == code) {
-			return dst_length;
-		}
-
-		// TODO: Handle errors
-		return 0;
-	}
+	                         size_type dst_cap) const override;
 
 	Compressor* clone() const override { return new Compressor(*this); }
 };

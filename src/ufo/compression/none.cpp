@@ -39,50 +39,40 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef UFO_COMPRESSION_LZF_HPP
-#define UFO_COMPRESSION_LZF_HPP
-
-// UFO
-#include <ufo/compression/algorithm.hpp>
-#include <ufo/compression/compressor.hpp>
-#include <ufo/utility/io/buffer.hpp>
-
-// STL
-#include <cmath>
-#include <cstddef>
+//  UFO
+#include <ufo/compression/none.hpp>
 
 namespace ufo
 {
-template <>
-struct Compressor<CompressionAlgorithm::LZF> : public CompressorBase {
-	Compressor() noexcept         = default;
-	Compressor(Compressor const&) = default;
-	Compressor(Compressor&&)      = default;
+Compressor<CompressionAlgorithm::NONE>::size_type
+Compressor<CompressionAlgorithm::NONE>::maxSizeImpl() const
+{
+	return std::numeric_limits<size_type>::max();
+}
 
-	~Compressor() override = default;
+Compressor<CompressionAlgorithm::NONE>::size_type Compressor<
+    CompressionAlgorithm::NONE>::compressBoundImpl(size_type uncompressed_size) const
+{
+	return uncompressed_size;
+}
 
-	Compressor& operator=(Compressor const&) = default;
-	Compressor& operator=(Compressor&&)      = default;
+Compressor<CompressionAlgorithm::NONE>::size_type
+Compressor<CompressionAlgorithm::NONE>::compressImpl(std::byte const* src, std::byte* dst,
+                                                     size_type src_size,
+                                                     size_type dst_cap) const
+{
+	assert(src_size <= dst_cap);
+	std::memcpy(dst, src, src_size);
+	return src_size;
+}
 
-	[[nodiscard]] CompressionAlgorithm type() const noexcept override
-	{
-		return CompressionAlgorithm::LZF;
-	}
-
- protected:
-	[[nodiscard]] size_type maxSizeImpl() const override;
-
-	[[nodiscard]] size_type compressBoundImpl(size_type uncompressed_size) const override;
-
-	size_type compressImpl(std::byte const* src, std::byte* dst, size_type src_size,
-	                       size_type dst_cap) const override;
-
-	size_type decompressImpl(std::byte const* src, std::byte* dst, size_type src_size,
-	                         size_type dst_cap) const override;
-
-	Compressor* clone() const override { return new Compressor(*this); }
-};
-
+Compressor<CompressionAlgorithm::NONE>::size_type
+Compressor<CompressionAlgorithm::NONE>::decompressImpl(std::byte const* src,
+                                                       std::byte* dst, size_type src_size,
+                                                       size_type dst_cap) const
+{
+	assert(src_size <= dst_cap);
+	std::memcpy(dst, src, src_size);
+	return src_size;
+}
 }  // namespace ufo
-
-#endif  // UFO_COMPRESSION_LZF_HPP

@@ -82,37 +82,16 @@ struct Compressor<CompressionAlgorithm::LZ4> : public CompressorBase {
 	// TODO: Maybe add "raw" methods that can be used to read for example PCL point clouds
 
  protected:
-	[[nodiscard]] size_type maxSizeImpl() const override
-	{
-		return static_cast<size_type>(LZ4_MAX_INPUT_SIZE);
-	}
+	[[nodiscard]] size_type maxSizeImpl() const override;
 
-	[[nodiscard]] size_type compressBoundImpl(size_type uncompressed_size) const override
-	{
-		return static_cast<size_type>(LZ4_compressBound(LZ4_MAX_INPUT_SIZE));
-	}
+	[[nodiscard]] size_type compressBoundImpl(size_type uncompressed_size) const override;
 
 	size_type compressImpl(std::byte const* src, std::byte* dst, size_type src_size,
-	                       size_type dst_cap) const override
-	{
-		return static_cast<size_type>(
-		    0 < compression_level
-		        ? LZ4_compress_HC(reinterpret_cast<char const*>(src),
-		                          reinterpret_cast<char*>(dst), static_cast<int>(src_size),
-		                          static_cast<int>(dst_cap), compression_level)
-		        : LZ4_compress_fast(reinterpret_cast<char const*>(src),
-		                            reinterpret_cast<char*>(dst), static_cast<int>(src_size),
-		                            static_cast<int>(dst_cap), acceleration));
-	}
+	                       size_type dst_cap) const override;
 
 	[[nodiscard]] size_type decompressImpl(std::byte const* src, std::byte* dst,
 	                                       size_type src_size,
-	                                       size_type dst_cap) const override
-	{
-		return static_cast<std::size_t>(LZ4_decompress_safe(
-		    reinterpret_cast<char const*>(src), reinterpret_cast<char*>(dst),
-		    static_cast<int>(src_size), static_cast<int>(dst_cap)));
-	}
+	                                       size_type dst_cap) const override;
 
 	[[nodiscard]] Compressor* clone() const override { return new Compressor(*this); }
 };

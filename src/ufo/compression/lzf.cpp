@@ -39,50 +39,43 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef UFO_COMPRESSION_LZF_HPP
-#define UFO_COMPRESSION_LZF_HPP
+//  UFO
+#include <ufo/compression/lzf.hpp>
 
-// UFO
-#include <ufo/compression/algorithm.hpp>
-#include <ufo/compression/compressor.hpp>
-#include <ufo/utility/io/buffer.hpp>
-
-// STL
-#include <cmath>
-#include <cstddef>
+// LZF
+extern "C" {
+#include <lzf.h>
+}
 
 namespace ufo
 {
-template <>
-struct Compressor<CompressionAlgorithm::LZF> : public CompressorBase {
-	Compressor() noexcept         = default;
-	Compressor(Compressor const&) = default;
-	Compressor(Compressor&&)      = default;
+Compressor<CompressionAlgorithm::LZF>::size_type
+Compressor<CompressionAlgorithm::LZF>::maxSizeImpl() const
+{
+	return std::numeric_limits<unsigned int>::max();
+}
 
-	~Compressor() override = default;
+Compressor<CompressionAlgorithm::LZF>::size_type Compressor<
+    CompressionAlgorithm::LZF>::compressBoundImpl(size_type uncompressed_size) const
+{
+	return static_cast<size_type>(std::ceil(1.04 * static_cast<double>(uncompressed_size)));
+}
 
-	Compressor& operator=(Compressor const&) = default;
-	Compressor& operator=(Compressor&&)      = default;
+Compressor<CompressionAlgorithm::LZF>::size_type
+Compressor<CompressionAlgorithm::LZF>::compressImpl(std::byte const* src, std::byte* dst,
+                                                    size_type src_size,
+                                                    size_type dst_cap) const
+{
+	return lzf_compress(src, static_cast<unsigned int>(src_size), dst,
+	                    static_cast<unsigned int>(dst_cap));
+}
 
-	[[nodiscard]] CompressionAlgorithm type() const noexcept override
-	{
-		return CompressionAlgorithm::LZF;
-	}
-
- protected:
-	[[nodiscard]] size_type maxSizeImpl() const override;
-
-	[[nodiscard]] size_type compressBoundImpl(size_type uncompressed_size) const override;
-
-	size_type compressImpl(std::byte const* src, std::byte* dst, size_type src_size,
-	                       size_type dst_cap) const override;
-
-	size_type decompressImpl(std::byte const* src, std::byte* dst, size_type src_size,
-	                         size_type dst_cap) const override;
-
-	Compressor* clone() const override { return new Compressor(*this); }
-};
-
+Compressor<CompressionAlgorithm::LZF>::size_type
+Compressor<CompressionAlgorithm::LZF>::decompressImpl(std::byte const* src,
+                                                      std::byte* dst, size_type src_size,
+                                                      size_type dst_cap) const
+{
+	return lzf_decompress(src, static_cast<unsigned int>(src_size), dst,
+	                      static_cast<unsigned int>(dst_cap));
+}
 }  // namespace ufo
-
-#endif  // UFO_COMPRESSION_LZF_HPP

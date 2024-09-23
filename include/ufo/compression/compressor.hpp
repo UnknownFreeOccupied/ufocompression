@@ -170,31 +170,33 @@ struct CompressorBase {
 	size_type compress(std::istream& in, std::ostream& out,
 	                   size_type uncompressed_size) const
 	{
-		// TODO: Implement
-		return 0;
+		std::uint64_t size = static_cast<std::uint64_t>(uncompressed_size);
 
-		// std::uint64_t size = static_cast<std::uint64_t>(uncompressed_size);
+		auto compressed_size = compressBound(uncompressed_size);
 
-		// auto compressed_size = compressBound(uncompressed_size);
-		// auto src             = std::make_unique<char[]>(uncompressed_size + sizeof size);
-		// auto dst            = std::make_unique<char[]>(compressed_size);
+		auto buffer_size = std::max(uncompressed_size, compressed_size) + sizeof(size);
 
-		// std::memcpy(src.get(), &size, sizeof size);
+		auto src = std::make_unique<std::byte[]>(buffer_size);
+		auto dst = std::make_unique<std::byte[]>(buffer_size);
 
-		// in.read(src.get() + sizeof size, uncompressed_size);
+		// std::memcpy(src.get(), &size, sizeof(size));
 
-		// compressed_size = compress(src, dst);
+		// in.read(reinterpret_cast<char*>(src.get() + sizeof(size)), uncompressed_size);
+
+		// compressed_size =
+		//     compressImpl(src.get(), dst.get(), uncompressed_size, compressed_size);
 
 		// // TODO: Implement
-		// for (auto it = next(); it; it = it->next()) {
+		// for (auto const* it = &next(); it; it = &(it->next())) {
 		// 	std::swap(src, dst);
-		// 	compressed_size = it->compress(src, dst);
+		// 	compressed_size =
+		// 	    it->compressImpl(src.get(), dst.get(), compressed_size, buffer_size);
 		// }
 
-		// // TODO: Implement
-		// out.write(dst.get(), compressed_size);
+		// TODO: Implement
+		out.write(reinterpret_cast<char const*>(dst.get()), compressed_size);
 
-		// return compressed_size;
+		return compressed_size;
 	}
 
 	size_type compress(ReadBuffer& in, WriteBuffer& out) const

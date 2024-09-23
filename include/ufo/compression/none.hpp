@@ -70,31 +70,15 @@ struct Compressor<CompressionAlgorithm::NONE> : public CompressorBase {
 	}
 
  protected:
-	[[nodiscard]] size_type maxSizeImpl() const override
-	{
-		return std::numeric_limits<size_type>::max();
-	}
+	[[nodiscard]] size_type maxSizeImpl() const override;
 
-	[[nodiscard]] size_type compressBoundImpl(size_type uncompressed_size) const override
-	{
-		return uncompressed_size;
-	}
+	[[nodiscard]] size_type compressBoundImpl(size_type uncompressed_size) const override;
 
 	size_type compressImpl(std::byte const* src, std::byte* dst, size_type src_size,
-	                       size_type dst_cap) const override
-	{
-		assert(src_size <= dst_cap);
-		std::memcpy(dst, src, src_size);
-		return src_size;
-	}
+	                       size_type dst_cap) const override;
 
 	size_type decompressImpl(std::byte const* src, std::byte* dst, size_type src_size,
-	                         size_type dst_cap) const override
-	{
-		assert(src_size <= dst_cap);
-		std::memcpy(dst, src, src_size);
-		return src_size;
-	}
+	                         size_type dst_cap) const override;
 
 	Compressor* clone() const override { return new Compressor(*this); }
 };
