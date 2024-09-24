@@ -7,7 +7,7 @@ include("${PROJECT_SOURCE_DIR}/3rdparty/catch2/catch2.cmake")
 # # set(CMAKE_CXX_OUTPUT_EXTENSION_REPLACE ON)
 
 add_executable(ufocompression_tests
-	lz4_test.cpp
+	compression_test.cpp
 )
 
 target_link_libraries(ufocompression_tests PRIVATE UFO::Compression Catch2::Catch2WithMain)

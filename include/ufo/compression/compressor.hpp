@@ -50,6 +50,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
+#include <filesystem>
 #include <iostream>
 #include <limits>
 #include <memory>
@@ -58,8 +59,19 @@
 
 namespace ufo
 {
+// Forward declare
+struct Compressor;
+
+// Type traits
+template <class T>
+using is_compressor = std::is_base_of<Compressor, T>;
+
+template <class T>
+inline constexpr bool is_compressor_v = is_compressor<T>::value;
+
+// Implement
 struct Compressor {
-	using size_type = std::size_t;
+	using size_type = std::uintmax_t;
 
 	Compressor() noexcept = default;
 
@@ -97,16 +109,14 @@ struct Compressor {
 
 	[[nodiscard]] Compressor const& next() const { return *next_; }
 
-	template <class Comp,
-	          std::enable_if_t<std::is_base_of_v<Compressor, Comp>, bool> = true>
+	template <class Comp, std::enable_if_t<is_compressor_v<Comp>, bool> = true>
 	Compressor& next(Comp const& next)
 	{
 		next_ = std::make_unique<Comp>(next);
 		return *next_;
 	}
 
-	template <class Comp,
-	          std::enable_if_t<std::is_base_of_v<Compressor, Comp>, bool> = true>
+	template <class Comp, std::enable_if_t<is_compressor_v<Comp>, bool> = true>
 	Compressor& next(Comp&& next)
 	{
 		next_ = std::make_unique<Comp>(std::forward<Comp>(next));
@@ -115,13 +125,35 @@ struct Compressor {
 
 	[[nodiscard]] virtual CompressionAlgorithm type() const noexcept = 0;
 
-	[[nodiscard]] std::vector<CompressionAlgorithm> chain() const
+	[[nodiscard]] std::vector<CompressionAlgorithm> typeChain() const
 	{
 		std::vector<CompressionAlgorithm> chain;
 		chain.reserve(size());
 		chain.push_back(type());
 		for (auto it = &next(); it; it = &it->next()) {
 			chain.push_back(it->type());
+		}
+		return chain;
+	}
+
+	[[nodiscard]] std::vector<Compressor*> chain()
+	{
+		std::vector<Compressor*> chain;
+		chain.reserve(size());
+		chain.push_back(this);
+		for (auto it = &next(); it; it = &it->next()) {
+			chain.push_back(it);
+		}
+		return chain;
+	}
+
+	[[nodiscard]] std::vector<Compressor const*> chain() const
+	{
+		std::vector<Compressor const*> chain;
+		chain.reserve(size());
+		chain.push_back(this);
+		for (auto it = &next(); it; it = &it->next()) {
+			chain.push_back(it);
 		}
 		return chain;
 	}
@@ -166,36 +198,79 @@ struct Compressor {
 		}
 	}
 
+	size_type compress(std::filesystem::path const& in,
+	                   std::filesystem::path const& out) const
+	{
+		size_type   uncompressed_size{};
+		std::size_t num{};
+		if (std::filesystem::is_directory(in)) {
+			for (auto const& entry : std::filesystem::recursive_directory_iterator(in)) {
+				if (entry.is_regular_file()) {
+					++num;
+					uncompressed_size += std::filesystem::file_size(entry.path());
+				} else if (entry.is_directory()) {
+					++num;
+				}
+			}
+		}
+
+		std::cout << "Num: " << num << '\n';
+		std::cout << "Size: " << uncompressed_size << '\n';
+
+		return 0;
+	}
+
 	size_type compress(std::istream& in, std::ostream& out, size_type uncompressed_size,
 	                   bool native = false) const
 	{
-		std::uint64_t size = static_cast<std::uint64_t>(uncompressed_size);
+		auto compressed_bound = compressBound(uncompressed_size, native);
 
-		auto compressed_size = compressBound(uncompressed_size);
+		auto buffer_size = std::max(uncompressed_size, compressed_bound);
 
-		auto buffer_size = std::max(uncompressed_size, compressed_size) + sizeof(size);
+		if (native) {
+			auto src = std::make_unique<std::byte[]>(buffer_size);
+			auto dst = std::make_unique<std::byte[]>(buffer_size);
 
-		auto src = std::make_unique<std::byte[]>(buffer_size);
-		auto dst = std::make_unique<std::byte[]>(buffer_size);
+			in.read(reinterpret_cast<char*>(dst.get()), uncompressed_size);
 
-		// std::memcpy(src.get(), &size, sizeof(size));
+			auto compressed_size = uncompressed_size;
+			for (auto it = this; it; it = &it->next()) {
+				std::swap(src, dst);
+				compressed_size = compress(src.get(), dst.get(), compressed_size, buffer_size);
+			}
 
-		// in.read(reinterpret_cast<char*>(src.get() + sizeof(size)), uncompressed_size);
+			out.write(reinterpret_cast<char const*>(dst.get()), compressed_size);
 
-		// compressed_size =
-		//     compressImpl(src.get(), dst.get(), uncompressed_size, compressed_size);
+			return compressed_size;
+		}
+
+		return 0;
+
+		// std::uint64_t size = static_cast<std::uint64_t>(uncompressed_size);
+
+		// buffer_size += sizeof(size);
+
+		// auto src = std::make_unique<std::byte[]>(buffer_size);
+		// auto dst = std::make_unique<std::byte[]>(buffer_size);
+
+		// // std::memcpy(src.get(), &size, sizeof(size));
+
+		// // in.read(reinterpret_cast<char*>(src.get() + sizeof(size)), uncompressed_size);
+
+		// // compressed_size =
+		// //     compressImpl(src.get(), dst.get(), uncompressed_size, compressed_size);
+
+		// // // TODO: Implement
+		// // for (auto const* it = &next(); it; it = &(it->next())) {
+		// // 	std::swap(src, dst);
+		// // 	compressed_size =
+		// // 	    it->compressImpl(src.get(), dst.get(), compressed_size, buffer_size);
+		// // }
 
 		// // TODO: Implement
-		// for (auto const* it = &next(); it; it = &(it->next())) {
-		// 	std::swap(src, dst);
-		// 	compressed_size =
-		// 	    it->compressImpl(src.get(), dst.get(), compressed_size, buffer_size);
-		// }
+		// out.write(reinterpret_cast<char const*>(dst.get()), compressed_size);
 
-		// TODO: Implement
-		out.write(reinterpret_cast<char const*>(dst.get()), compressed_size);
-
-		return compressed_size;
+		// return compressed_size;
 	}
 
 	size_type compress(ReadBuffer& in, WriteBuffer& out, bool native = false) const
@@ -204,14 +279,40 @@ struct Compressor {
 		return 0;
 	}
 
-	size_type decompress(std::istream& in, std::ostream& out, bool native = false) const
+	static size_type decompress(std::istream& in, std::ostream& out)
 	{
 		// TODO: Implement
 		return 0;
 	}
 
-	size_type decompress(ReadBuffer& in, WriteBuffer& out, bool native = false) const
+	static size_type decompress(ReadBuffer& in, WriteBuffer& out)
 	{
+		// TODO: Implement
+		return 0;
+	}
+
+	size_type decompress(std::istream& in, std::ostream& out, bool native) const
+	{
+		if (!native) {
+			return decompress(in, out);
+		}
+
+		in.seekg(0, std::ios::seekdir::_S_end);
+
+		std::size_t uncompressed_size = in.tellg();
+
+		in.seekg(0, std::ios::seekdir::_S_beg);
+
+		// TODO: Implement
+		return 0;
+	}
+
+	size_type decompress(ReadBuffer& in, WriteBuffer& out, bool native) const
+	{
+		if (!native) {
+			return decompress(in, out);
+		}
+
 		// TODO: Implement
 		return 0;
 	}
