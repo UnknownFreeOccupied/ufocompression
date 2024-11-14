@@ -18,8 +18,8 @@ add_library(ufocompression SHARED
 	src/ufo/compression/lz4.cpp
 	src/ufo/compression/lzf.cpp
 	src/ufo/compression/none.cpp
-	src/ufo/compression/zlib.cpp
-	src/ufo/compression/zstd.cpp
+	# src/ufo/compression/zlib.cpp
+	# src/ufo/compression/zstd.cpp
 )
 add_library(UFO::Compression ALIAS ufocompression)
 
@@ -30,7 +30,7 @@ set_target_properties(ufocompression PROPERTIES
 	CXX_EXTENSIONS OFF
 )
 
-target_link_libraries(ufocompression PUBLIC UFO::Utility PRIVATE lz4 lzf zlib libzstd_static)
+target_link_libraries(ufocompression PUBLIC UFO::Utility PRIVATE lz4 lzf)
 
 target_include_directories(ufocompression PUBLIC
 	$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
